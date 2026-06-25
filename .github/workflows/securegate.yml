@@ -60,16 +60,18 @@ jobs:
       - name: Start SecureGate AI scan
         id: securegate_start
         run: |
+          START_PAYLOAD=$(jq -n \
+            --arg project_name "$PROJECT_NAME" \
+            --arg repository_url "$REPOSITORY_URL" \
+            --arg branch "$BRANCH_NAME" \
+            --arg commit_sha "$COMMIT_SHA" \
+            --arg pipeline_run_id "$PIPELINE_RUN_ID" \
+            '{project_name:$project_name, repository_url:$repository_url, branch:$branch, commit_sha:$commit_sha, pipeline_run_id:$pipeline_run_id}')
+
           RESPONSE=$(curl -fsS -X POST "${SECUREGATE_URL%/}/api/v1/pipeline/start" \
             -H "Authorization: Bearer $SECUREGATE_API_KEY" \
             -H "Content-Type: application/json" \
-            -d "{
-              \"project_name\":\"$PROJECT_NAME\",
-              \"repository_url\":\"$REPOSITORY_URL\",
-              \"branch\":\"$BRANCH_NAME\",
-              \"commit_sha\":\"$COMMIT_SHA\",
-              \"pipeline_run_id\":\"$PIPELINE_RUN_ID\"
-            }")
+            --data-binary "$START_PAYLOAD")
 
           echo "$RESPONSE"
           SCAN_ID=$(echo "$RESPONSE" | jq -r .scan_id)
