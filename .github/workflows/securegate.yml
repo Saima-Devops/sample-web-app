@@ -60,21 +60,26 @@ jobs:
       - name: Start SecureGate AI scan
         id: securegate_start
         run: |
-          jq -n \
+          if echo "$REPOSITORY_URL" | grep -Eq '\[|\]|\(|\)'; then
+            echo "REPOSITORY_URL is malformed. It must be a plain URL, not a Markdown link: $REPOSITORY_URL"
+            exit 1
+          fi
+
+          START_PAYLOAD=$(jq -nc \
             --arg project_name "$PROJECT_NAME" \
             --arg repository_url "$REPOSITORY_URL" \
             --arg branch "$BRANCH_NAME" \
             --arg commit_sha "$COMMIT_SHA" \
             --arg pipeline_run_id "$PIPELINE_RUN_ID" \
-            '{project_name:$project_name, repository_url:$repository_url, branch:$branch, commit_sha:$commit_sha, pipeline_run_id:$pipeline_run_id}' > securegate-start-payload.json
+            '{project_name:$project_name, repository_url:$repository_url, branch:$branch, commit_sha:$commit_sha, pipeline_run_id:$pipeline_run_id}')
 
           echo "SecureGate start payload:"
-          cat securegate-start-payload.json
+          echo "$START_PAYLOAD" | jq .
 
           HTTP_STATUS=$(curl -sS -o securegate-start-response.json -w "%{http_code}" -X POST "${SECUREGATE_URL%/}/api/v1/pipeline/start" \
             -H "Authorization: Bearer $SECUREGATE_API_KEY" \
             -H "Content-Type: application/json" \
-            --data-binary @securegate-start-payload.json)
+            --data "$START_PAYLOAD")
 
           echo "SecureGate start response status: $HTTP_STATUS"
           cat securegate-start-response.json
