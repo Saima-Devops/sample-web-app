@@ -60,20 +60,30 @@ jobs:
       - name: Start SecureGate AI scan
         id: securegate_start
         run: |
-          START_PAYLOAD=$(jq -n \
+          jq -n \
             --arg project_name "$PROJECT_NAME" \
             --arg repository_url "$REPOSITORY_URL" \
             --arg branch "$BRANCH_NAME" \
             --arg commit_sha "$COMMIT_SHA" \
             --arg pipeline_run_id "$PIPELINE_RUN_ID" \
-            '{project_name:$project_name, repository_url:$repository_url, branch:$branch, commit_sha:$commit_sha, pipeline_run_id:$pipeline_run_id}')
+            '{project_name:$project_name, repository_url:$repository_url, branch:$branch, commit_sha:$commit_sha, pipeline_run_id:$pipeline_run_id}' > securegate-start-payload.json
 
-          RESPONSE=$(curl -fsS -X POST "${SECUREGATE_URL%/}/api/v1/pipeline/start" \
+          echo "SecureGate start payload:"
+          cat securegate-start-payload.json
+
+          HTTP_STATUS=$(curl -sS -o securegate-start-response.json -w "%{http_code}" -X POST "${SECUREGATE_URL%/}/api/v1/pipeline/start" \
             -H "Authorization: Bearer $SECUREGATE_API_KEY" \
             -H "Content-Type: application/json" \
-            --data-binary "$START_PAYLOAD")
+            --data-binary @securegate-start-payload.json)
 
-          echo "$RESPONSE"
+          echo "SecureGate start response status: $HTTP_STATUS"
+          cat securegate-start-response.json
+          if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
+            echo "SecureGate AI rejected the pipeline start request. Check the validation details above."
+            exit 1
+          fi
+
+          RESPONSE=$(cat securegate-start-response.json)
           SCAN_ID=$(echo "$RESPONSE" | jq -r .scan_id)
           if [ -z "$SCAN_ID" ] || [ "$SCAN_ID" = "null" ]; then
             echo "SecureGate AI did not return a scan_id"
