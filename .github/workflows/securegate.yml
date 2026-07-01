@@ -22,16 +22,21 @@ jobs:
       PROJECT_NAME: ${{ github.event.repository.name }}
       REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
       BRANCH_NAME: ${{ github.ref_name }}
-      COMMIT_SHA: ${{ github.sha }}
       PIPELINE_RUN_ID: ${{ github.run_id }}
       REPOSITORY_OWNER: ${{ github.repository_owner }}
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
+
+      - name: Detect current commit SHA
+        run: |
+          CURRENT_COMMIT_SHA=$(git rev-parse HEAD)
+          echo "COMMIT_SHA=$CURRENT_COMMIT_SHA" >> "$GITHUB_ENV"
+          echo "Current commit SHA: $CURRENT_COMMIT_SHA"
 
       - name: Setup Node.js 24
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
         with:
           node-version: "24"
 
@@ -114,7 +119,7 @@ jobs:
           test -f semgrep-report.json || echo '{"results":[]}' > semgrep-report.json
 
       - name: Run Trivy filesystem scan
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@df678dbccf677bc6937338d569ba0da18964a8cc
         with:
           scan-type: fs
           scan-ref: .
@@ -128,7 +133,7 @@ jobs:
 
       - name: Run SonarQube scan
         if: env.SONAR_HOST_URL != '' && env.SONAR_TOKEN != '' && env.SONAR_PROJECT_KEY != '' && env.SONAR_ORGANIZATION != ''
-        uses: SonarSource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # nosemgrep: generic.secrets.security.detected-sonarqube-docs-api-key.detected-sonarqube-docs-api-key
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
@@ -266,7 +271,7 @@ jobs:
           fi
 
       - name: Run Trivy image scan
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@df678dbccf677bc6937338d569ba0da18964a8cc
         with:
           image-ref: ${{ steps.image_build.outputs.image_ref }}
           format: json
@@ -379,7 +384,7 @@ jobs:
 
       - name: Rescan pushed Docker image
         if: env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' && steps.image_freshness.outputs.changed == 'true'
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@df678dbccf677bc6937338d569ba0da18964a8cc
         with:
           image-ref: ${{ steps.image_build.outputs.image_ref }}
           format: json
