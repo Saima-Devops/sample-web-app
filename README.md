@@ -24,6 +24,6 @@ This app is deployed to:
 ---
 
 by Saima Usman \
-Jr. Devops Engineer
+Jr. Devops Engineer + Systems Solution Architects
 
 --
