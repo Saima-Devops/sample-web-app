@@ -2,8 +2,8 @@ name: SecureGate AI Scheduled Summaries
 
 on:
   schedule:
-    # Daily summary at 15:00 Dubai time / 11:00 UTC.
-    - cron: "0 11 * * *"
+    # Daily summary at 18:00 Dubai time / 11:00 UTC.
+    - cron: "0 14 * * *"
     # Weekly summary every Monday at 18:00 Dubai time / 14:00 UTC.
     - cron: "0 14 * * 1"
     # Monthly summary on the 1st day at 21:00 Dubai time / 17:00 UTC.
